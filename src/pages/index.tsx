@@ -3,8 +3,9 @@ import localFont from "next/font/local"
 import BlurIn from "@/components/magicui/blur-in"
 import { useState, useEffect } from "react"
 import { FileDependencyMap } from "@/backend/types"
-import { motion, AnimatePresence } from 'framer-motion';
-import ShimmerButton from "@/components/magicui/shimmer-button";
+import { motion, AnimatePresence } from "framer-motion"
+import ShimmerButton from "@/components/magicui/shimmer-button"
+import { CodeBlock } from "@/components/code-block"
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -21,17 +22,17 @@ export default function Home() {
   const [repoId, setRepoId] = useState<number | null>(1)
   const [fileContent, setFileContent] = useState<string | null>(null)
   const [graph, setGraph] = useState<FileDependencyMap | null>(null)
-  const [repoUrl, setRepoUrl] = useState('');
-  const [knowledgeLevel, setKnowledgeLevel] = useState(0);
-  const [activeRepo, setActiveRepo] = useState('');
-  const [showContent, setShowContent] = useState(false);
+  const [repoUrl, setRepoUrl] = useState("")
+  const [knowledgeLevel, setKnowledgeLevel] = useState(0)
+  const [activeRepo, setActiveRepo] = useState("")
+  const [showContent, setShowContent] = useState(false)
 
   const repoOptions = [
-    { name: 'PyTorch', url: 'https://github.com/pytorch/pytorch' },
-    { name: 'NumPy', url: 'https://github.com/numpy/numpy' },
-    { name: 'React', url: 'https://github.com/facebook/react' },
-    { name: 'Supabase', url: 'https://github.com/supabase/supabase' },
-  ];
+    { name: "PyTorch", url: "https://github.com/pytorch/pytorch" },
+    { name: "NumPy", url: "https://github.com/numpy/numpy" },
+    { name: "React", url: "https://github.com/facebook/react" },
+    { name: "Supabase", url: "https://github.com/supabase/supabase" },
+  ]
 
   const handleCloneRepo = async () => {
     try {
@@ -105,32 +106,34 @@ export default function Home() {
     { text: "Documentation in docs/", importance: "medium" },
     { text: "Build scripts in scripts/", importance: "low" },
     { text: "Third-party integrations in integrations/", importance: "medium" },
-  ];
+  ]
 
   const getStyleForImportance = (importance: string) => {
     switch (importance) {
-      case 'high':
-        return 'text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500';
-      case 'medium':
-        return 'text-xl font-semibold bg-gradient-to-r from-blue-500 to-teal-500';
-      case 'low':
-        return 'text-lg font-medium bg-gradient-to-r from-green-500 to-yellow-500';
+      case "high":
+        return "text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500"
+      case "medium":
+        return "text-xl font-semibold bg-gradient-to-r from-blue-500 to-teal-500"
+      case "low":
+        return "text-lg font-medium bg-gradient-to-r from-green-500 to-yellow-500"
       default:
-        return '';
+        return ""
     }
-  };
+  }
 
   const handleRepoButtonClick = (url: string, name: string) => {
-    setRepoUrl(url);
-    setActiveRepo(name);
-  };
+    setRepoUrl(url)
+    setActiveRepo(name)
+  }
 
   const handleLearnNowClick = () => {
-    setShowContent(true);
-  };
+    setShowContent(true)
+  }
 
   return (
-    <div className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-gradient-to-b from-gray-100 to-gray-200 py-8 px-4 sm:px-8 font-[family-name:var(--font-geist-sans)]`}>
+    <div
+      className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-gradient-to-b from-gray-100 to-gray-200 py-8 px-4 sm:px-8 font-[family-name:var(--font-geist-sans)]`}
+    >
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col sm:flex-row items-end justify-center mb-12">
           <div className="mb-6 sm:mb-0 sm:mr-8">
@@ -147,10 +150,13 @@ export default function Home() {
             className="text-3xl sm:text-4xl font-bold text-green-800 dark:text-green-200 text-center sm:text-left"
           />
         </div>
-        
+
         <div className="p-6">
           <div className="mb-8 w-64 mx-auto">
-            <label htmlFor="knowledge-slider" className="block text-sm font-medium text-gray-700 mb-2 text-center">
+            <label
+              htmlFor="knowledge-slider"
+              className="block text-sm font-medium text-gray-700 mb-2 text-center"
+            >
               Your Knowledge Level of this Repo
             </label>
             <div className="relative">
@@ -184,8 +190,8 @@ export default function Home() {
                 onClick={() => handleRepoButtonClick(repo.url, repo.name)}
                 className={`px-3 py-1 text-sm rounded-full mb-2 ${
                   activeRepo === repo.name
-                    ? 'bg-green-600 text-white'
-                    : 'bg-white text-gray-800 hover:bg-green-100'
+                    ? "bg-green-600 text-white"
+                    : "bg-white text-gray-800 hover:bg-green-100"
                 } transition duration-300`}
               >
                 {repo.name}
@@ -198,10 +204,15 @@ export default function Home() {
               type="text"
               placeholder="Please enter a Github URL"
               value={repoUrl}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRepoUrl(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setRepoUrl(e.target.value)
+              }
               className="w-full sm:w-96 mb-4 sm:mb-0 sm:mr-4 px-4 py-2 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
             />
-            <ShimmerButton className="shadow-2xl bg-green-600 hover:bg-green-700" onClick={handleLearnNowClick}>
+            <ShimmerButton
+              className="shadow-2xl bg-green-600 hover:bg-green-700"
+              onClick={handleLearnNowClick}
+            >
               <span className="whitespace-pre-wrap text-center text-sm font-medium leading-none tracking-tight text-white">
                 Learn Now
               </span>
@@ -218,23 +229,48 @@ export default function Home() {
               transition={{ duration: 0.5 }}
             >
               <div className="mb-12 text-center space-y-6">
-                <h2 className="text-2xl font-bold text-green-800 mb-4">Unlock the Power of Code Analysis</h2>
+                <h2 className="text-2xl font-bold text-green-800 mb-4">
+                  Unlock the Power of Code Analysis
+                </h2>
                 <p className="text-md text-gray-700">
-                  Discover the inner workings of any GitHub repository with our advanced analysis tool. Whether you're a seasoned developer or just starting out, our platform provides valuable insights into code structure, dependencies, and best practices.
+                  Discover the inner workings of any GitHub repository with our
+                  advanced analysis tool. Whether you're a seasoned developer or
+                  just starting out, our platform provides valuable insights
+                  into code structure, dependencies, and best practices.
                 </p>
-                <h3 className="text-xl font-semibold text-green-700 mt-6">How It Works</h3>
+                <h3 className="text-xl font-semibold text-green-700 mt-6">
+                  How It Works
+                </h3>
                 <ol className="list-decimal list-inside text-left text-gray-700 space-y-2">
                   <li>Enter a GitHub URL in the input field above</li>
                   <li>Click the "Learn Now" button to start the analysis</li>
-                  <li>Explore the breakdown of the repository's architecture</li>
-                  <li>Gain insights into key components and project organization</li>
+                  <li>
+                    Explore the breakdown of the repository's architecture
+                  </li>
+                  <li>
+                    Gain insights into key components and project organization
+                  </li>
                 </ol>
-                <h3 className="text-xl font-semibold text-green-700 mt-6">Key Features</h3>
+                <h3 className="text-xl font-semibold text-green-700 mt-6">
+                  Key Features
+                </h3>
                 <ul className="list-disc list-inside text-left text-gray-700 space-y-2">
-                  <li>**AI-Powered Analysis**: Leverage cutting-edge machine learning algorithms</li>
-                  <li>**Comprehensive Breakdown**: Get a detailed view of the project structure</li>
-                  <li>**Best Practices Highlight**: Learn from well-structured repositories</li>
-                  <li>**Dependency Mapping**: Understand the relationships between different parts of the code</li>
+                  <li>
+                    **AI-Powered Analysis**: Leverage cutting-edge machine
+                    learning algorithms
+                  </li>
+                  <li>
+                    **Comprehensive Breakdown**: Get a detailed view of the
+                    project structure
+                  </li>
+                  <li>
+                    **Best Practices Highlight**: Learn from well-structured
+                    repositories
+                  </li>
+                  <li>
+                    **Dependency Mapping**: Understand the relationships between
+                    different parts of the code
+                  </li>
                 </ul>
               </div>
 
@@ -245,7 +281,9 @@ export default function Home() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: index * 0.1 }}
-                    className={`p-4 rounded-lg shadow-md ${getStyleForImportance(item.importance)}`}
+                    className={`p-4 rounded-lg shadow-md ${getStyleForImportance(
+                      item.importance
+                    )}`}
                   >
                     <p className="text-white text-sm">{item.text}</p>
                   </motion.div>
@@ -256,37 +294,34 @@ export default function Home() {
         </AnimatePresence>
       </div>
       <button
-          onClick={handleCloneRepo}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        >
-          Clone Repository
-        </button>
-        {repoId && <p>Repository cloned successfully! ID: {repoId}</p>}
+        onClick={handleCloneRepo}
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+      >
+        Clone Repository
+      </button>
+      {repoId && <p>Repository cloned successfully! ID: {repoId}</p>}
 
-        {graph && (
-          <div>
-            <h2>File Dependency Graph:</h2>
-            <pre className="bg-gray-100 p-4 rounded overflow-auto max-w-full">
-              {JSON.stringify(graph, null, 2)}
-            </pre>
-          </div>
-        )}
+      {graph && (
+        <div>
+          <h2>File Dependency Graph:</h2>
+          <CodeBlock
+            fileName="graph.json"
+            value={JSON.stringify(graph, null, 2)}
+          />
+        </div>
+      )}
 
-        <h2>Content of src/components/app.tsx:</h2>
-        <pre className="bg-gray-100 p-4 rounded overflow-auto max-w-full">
-          {fileContent || "Loading..."}
-        </pre>
-
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/pages/index.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-      </div>
-  );
-} 
+      <h2>Content of src/components/app.tsx:</h2>
+      <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
+        <li className="mb-2">
+          Get started by editing{" "}
+          <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
+            src/pages/index.tsx
+          </code>
+          <CodeBlock fileName="app.tsx" value={fileContent || "Loading..."} />
+        </li>
+        <li>Save and see your changes instantly.</li>
+      </ol>
+    </div>
+  )
+}
