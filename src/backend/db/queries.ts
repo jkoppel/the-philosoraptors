@@ -33,6 +33,16 @@ export async function getRepoByName(name: string) {
   return result;
 }
 
+export async function getRepoById(id: number): Promise<Repo | undefined> {
+  const result = await db
+    .selectFrom('repo')
+    .select(['id', 'name', 'local_path'])
+    .where('id', '=', id)
+    .executeTakeFirst();
+
+  return result as Repo | undefined;
+}
+
 /**********************************************
  ************* Import Graph queries ***********
  **********************************************/
