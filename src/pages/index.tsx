@@ -20,7 +20,8 @@ const geistMono = localFont({
 
 export default function Home() {
   const [repoId, setRepoId] = useState<number | null>(1)
-  const [fileContent, setFileContent] = useState<string | null>(null)
+  const demoFilePath = "packages/pglite/src/worker/index.ts"
+  const [demoFileContent, setDemoFileContent] = useState<string | null>(null)
   const [graph, setGraph] = useState<FileDependencyMap | null>(null)
   const [repoUrl, setRepoUrl] = useState("")
   const [knowledgeLevel, setKnowledgeLevel] = useState(0)
@@ -28,6 +29,7 @@ export default function Home() {
   const [showContent, setShowContent] = useState(false)
 
   const repoOptions = [
+    { name: "pglite", url: "https://github.com/electric-sql/pglite" },
     { name: "PyTorch", url: "https://github.com/pytorch/pytorch" },
     { name: "NumPy", url: "https://github.com/numpy/numpy" },
     { name: "React", url: "https://github.com/facebook/react" },
@@ -66,10 +68,10 @@ export default function Home() {
         throw new Error("Failed to fetch file content")
       }
       const data = await response.json()
-      setFileContent(data.content)
+      setDemoFileContent(data.content)
     } catch (error) {
       console.error("Error fetching file content:", error)
-      setFileContent("Error: Failed to fetch file content")
+      setDemoFileContent("Error: Failed to fetch file content")
     }
   }
 
@@ -293,35 +295,13 @@ export default function Home() {
           )}
         </AnimatePresence>
       </div>
-      <button
-        onClick={handleCloneRepo}
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-      >
-        Clone Repository
-      </button>
-      {repoId && <p>Repository cloned successfully! ID: {repoId}</p>}
-
-      {graph && (
-        <div>
-          <h2>File Dependency Graph:</h2>
-          <CodeBlock
-            fileName="graph.json"
-            value={JSON.stringify(graph, null, 2)}
-          />
-        </div>
-      )}
-
-      <h2>Content of src/components/app.tsx:</h2>
-      <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-        <li className="mb-2">
-          Get started by editing{" "}
-          <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-            src/pages/index.tsx
-          </code>
-          <CodeBlock fileName="app.tsx" value={fileContent || "Loading..."} />
-        </li>
-        <li>Save and see your changes instantly.</li>
-      </ol>
+      <div className="flex flex-col items-center justify-center max-w-4xl mx-auto">
+        <CodeBlock
+          className="w-full"
+          fileName={demoFilePath}
+          value={demoFileContent || "Loading..."}
+        />
+      </div>
     </div>
   )
 }
