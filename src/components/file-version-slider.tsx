@@ -15,12 +15,6 @@ export const FileVersionSlider: React.FC<FileVersionSliderProps> = ({
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-8 w-full">
-        <label
-          htmlFor="version-slider"
-          className="block text-sm font-medium text-gray-700 mb-2 text-center"
-        >
-          File Version
-        </label>
         <div className="relative">
           <input
             type="range"
@@ -37,7 +31,7 @@ export const FileVersionSlider: React.FC<FileVersionSliderProps> = ({
         </div>
         <div className="flex justify-between text-xs text-gray-500">
           {versions.map((_, index) => (
-            <span key={index}>{index}</span>
+            <span key={index}>{index + 1}</span>
           ))}
         </div>
       </div>

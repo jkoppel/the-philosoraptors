@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import ShimmerButton from "@/components/magicui/shimmer-button"
 import Graph from "@/components/graph"
 import { sampleModuleGraph } from "@/lib/samples"
-import { FileVersionSlider } from '@/components/file-version-slider'
+import { FileVersionSlider } from "@/components/file-version-slider"
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -85,19 +85,14 @@ export default function Home() {
 
   const fetchFileContent = async () => {
     try {
-      console.log("fetching file content")
       const response = await fetch(`/api/repos/${repoId}/files/${demoFilePath}`)
       if (!response.ok) {
-        console.log("response", response)
         throw new Error("Failed to fetch file content")
       }
       const data = await response.json()
       setDemoFileContent(data.content)
 
-      console.log('data', data)
-      console.log("fetching code levels")
       const codeLevels = await fetchCodeLevels(data.content)
-      console.log("codeLevels", codeLevels)
       setCodeLevels(codeLevels)
     } catch (error) {
       console.error("Error fetching file content:", error)
@@ -327,8 +322,13 @@ export default function Home() {
       </div>
       <div className="flex flex-col items-center justify-center max-w-4xl mx-auto">
         <details>
-          <summary>Code Block</summary>
-          <FileVersionSlider filePath={demoFilePath} versions={codeLevels || []} />
+          <summary className="text-xl font-bold text-green-800 mb-4">
+            {demoFilePath}
+          </summary>
+          <FileVersionSlider
+            filePath={demoFilePath}
+            versions={codeLevels || []}
+          />
         </details>
       </div>
 
