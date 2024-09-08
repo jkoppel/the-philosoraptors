@@ -15,7 +15,7 @@ import { insertFileDependencyGraph, insertRepo } from '../db/queries';
 
 function getFileDependencies(directoryPath: string): FileDependencyMap {
   const project = new Project();
-  project.addSourceFilesAtPaths(`${directoryPath}/**/*.{ts,tsx}`);
+  project.addSourceFilesAtPaths(`${directoryPath}/**/*.{ts,tsx,js,jsx}`);
 
   const dependencies: { [filename: string]: string[] } = {};
   project.getSourceFiles().forEach(sourceFile => {

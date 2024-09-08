@@ -1,12 +1,13 @@
 import path from 'path';
+import {globSync} from 'glob';
 
 
 import { db } from './db/conn';
 import { ReflexionModel, FileDependencyMap, ModuleGraph, ModuleName, ModulesDefinition } from './types';
 import { getFileDependencyGraph, getRepoById, getRepoByName } from './db/queries';
 import { z } from 'zod';
-import { getAllFiles, getFileTree, getReadme, renderFileTree } from './repos/fileStructure';
-import { easyRunLlmValidated } from './llm/execution';
+import { filterFileTree, getAllFiles, getFileTree, getReadme, isSubstantiveJsOrTsFile, renderFileTree } from './repos/fileStructure';
+import { easyRunLlm, easyRunLlmValidated } from './llm/execution';
 
 
 /**************************************************
@@ -103,6 +104,61 @@ export async function compareReflexionModelWithActual(reflexionModel: ReflexionM
  **************************************************/
 
 
+      /***
+       * Old piece of prompt output: 
+
+          For example, if you are given this directory structure:
+
+          src/
+            components/
+              HomeView.tsx
+              LoginForm.tsx
+            pages/
+              Home.tsx
+              Login.tsx
+
+          Then here is an example output:
+       
+         {{
+    "thought": "I will put all files related to home in the home module. I will put all files related to login in the login module.",
+    "modules": [
+            {{
+              "name": "home",
+              "files": [
+                {{
+                  "path": "src/pages/Home.tsx",
+                  "rationale": "This file is the entry point for the home page"
+                }},
+                {{
+                  "path": "src/components/HomeView.tsx",
+                  "rationale": "This file is the view for the home page"
+                }}
+              ]
+            }},
+            {{
+              "name": "login",
+              "files": [
+                {{
+                  "path": "src/pages/Login.tsx",
+                }},
+                {{
+                  "path": "src/components/LoginForm.tsx",
+                  "rationale": "This file is the form for the login page"
+                }}
+              ]
+            }}
+          ]
+        }}
+
+           DO NOT USE ANY OF THE ABOVE AS PART OF YOUR RESPONSE.
+   DO NOT USE THE PRECEDING FILES.
+   YOU WILL BE PUNISHED IF YOU DO.
+
+   YOU WILL BE GIVEN THE REAL FILES LATER.
+   BASE YOUR MODULE NAMES AND FILE ASSIGNMENTS ON THE REAL FILES. 
+      * 
+      */
+
  const promptModuleNames = `
    You are an expert software engineer. Your ability to distill complex concepts into simple explanations is remarkable.
    You are able to easily look at complex systems and understand the components.
@@ -113,51 +169,116 @@ export async function compareReflexionModelWithActual(reflexionModel: ReflexionM
    They should have high cohesion and call each other more than they call other files outside of their module.
 
    Here is the README for the repo:
+
+   README:
    {readme}
 
    Here is the file tree for the repo:
+
+   FILE TREE:
    {fileTree}
 
-   Include only *.ts and *.tsx files in the file tree.
+   Include only *.ts, *.tsx, *.js, and *.jsx files in the file tree.
+
+   Format your output like this:
+
+   ModuleName: <modulename1>
+   Thought: <Reason for picking this module name and the files that are part of it>
+   FilePaths: <filepath1>, <filepath2>, <filepath3>
+
+   ModuleName: <modulename2>
+   Thought: <Reason for picking this module name and the files that are part of it>
+   FilePaths: <filepath4>, <filepath5>, <filepath6>
+
+   ...
  ` as const;
 
+ /*
  const zodModuleNames = z.object({
+  thought: z.string({ description: "Your thought process as you generate the module names" }),
   modules: z.array(z.object({
     name: z.string({ description: "The name of the module" }),
-    files: z.array(z.string(), { description: "The files that are part of this module" }),
+    files: z.array(z.object({
+      rationale: z.string({ description: "The rationale for why this file is part of this module" }),
+      path: z.string(), 
+    })),
   })),
  });
 
  export type ModuleNamesResult = z.infer<typeof zodModuleNames>;
+ */
+ export type ModuleNamesResult = {
+  name: string;
+  files: string[];
+ }[];
+
+const stripLeadingRepoName = (repoName: string, filePath: string) => {
+  return filePath.replace(new RegExp(`^${repoName}/`)  , "").replace(new RegExp(`^${repoName}.git/`), "");
+}
+
+const parseModuleOutput = (repoName: string, rawOutput: string): ModuleNamesResult => {
+  const segments = rawOutput.split('\n\n');
+  const result: ModuleNamesResult = [];
+  for (const segment of segments) {
+    if (!segment.startsWith("ModuleName:")) {
+      continue;
+    }
+
+    const lines = segment.split('\n');
+    const name = lines[0].split(':')[1].trim();
+    //const thought = lines[1].split(':')[1].trim();
+    const filesPossiblyWithGlob = lines[2].split(':')[1].trim().split(',').map(file => file.trim());
+
+    // Expand file paths that might contain glob patterns
+    const files = filesPossiblyWithGlob.flatMap(filePath => {
+      // If the file path contains a glob pattern, expand it
+      if (filePath.includes('*')) {
+        return globSync(filePath).map((path) => stripLeadingRepoName(repoName, path));
+      }
+      // Otherwise, return the file path as is
+      return [stripLeadingRepoName(repoName, filePath)];
+    });
+
+    result.push({ name, files });
+  }
+  return result;
+}
 
  export async function generateModuleNames(repoId: number): Promise<ModuleNamesResult> {
   const repoData = await getRepoById(repoId);
-  const fileTree = await getFileTree(repoData!.id);
+  const fileTree = filterFileTree(await getFileTree(repoData!.id), isSubstantiveJsOrTsFile)!;
   const readme = await getReadme(repoData!.id);
 
-  let output = await easyRunLlmValidated({
+  let rawOutput = await easyRunLlm({
     prompt: promptModuleNames,
-    zodParser: zodModuleNames,
   }, {
     readme: readme,
     fileTree: renderFileTree(fileTree),
   });
 
+  let output = parseModuleOutput(repoData!.name, rawOutput);
+
   const retryCount = 3;
   let unseenFiles: Set<string> = new Set();
   for (let i = 0; i < retryCount; i++) {
     unincludedFiles: {
-      const allTsFiles = getAllFiles(fileTree, (file) => file.endsWith('.ts') || file.endsWith('.tsx'));
+      const allTsFiles = getAllFiles(fileTree, isSubstantiveJsOrTsFile).map(file => stripLeadingRepoName(repoData!.name, file));
       unseenFiles = new Set(allTsFiles);
-      for (const module of output.modules) {
+      for (const module of output) {
         for (const file of module.files) {
-          unseenFiles.delete(file);
+          unseenFiles.delete(stripLeadingRepoName(repoData!.name, file));
         }
       }
 
       if (unseenFiles.size == 0) {
         break;
       }
+
+
+      console.log("generateModuleNames: Retrying");
+      console.log("seen files", allTsFiles.filter(file => !unseenFiles.has(file)));
+      console.log("unseenFiles", unseenFiles);
+
 
       const correctionPrompt = `
         You are an expert software engineer. Your ability to distill complex concepts into simple explanations is remarkable.
@@ -172,19 +293,52 @@ export async function compareReflexionModelWithActual(reflexionModel: ReflexionM
         They should have high cohesion and call each other more than they call other files outside of their module.
 
         Here is the list of modules and the files that are part of each module:
+
+        MODULES:
         {modules}
 
         Here is the list of files that are not included in any module:
+
+        UNSEEN_FILES:
         {unseenFiles}
+
+
+        Format your output like this:
+
+        ModuleName: <modulename1>
+        Thought: <Reason for picking this module name and the files that are part of it>
+        FilePaths: <filepath1>, <filepath2>, <filepath3>
+
+        ModuleName: <modulename2>
+        Thought: <Reason for picking this module name and the files that are part of it>
+        FilePaths: <filepath4>, <filepath5>, <filepath6>
+
+        ...
+
+        Only use the existing module names.
+        Do not make up new module names.
+        Do not include existing files.
+        Only include the 
       ` as const;
 
-      output = await easyRunLlmValidated({
+      const rawCorrectedOutput = await easyRunLlm({
         prompt: correctionPrompt,
-        zodParser: zodModuleNames,        
       }, {
-        modules: output,
+        modules: JSON.stringify(output),
         unseenFiles: Array.from(unseenFiles).join('\n'),
       });
+
+      const correctedOutput = parseModuleOutput(repoData!.name, rawCorrectedOutput);
+
+      // merge correctedOutput into output
+      for (const correctedModule of correctedOutput) {
+        const existingModule = output.find(module => module.name === correctedModule.name);
+        if (existingModule) {
+          existingModule.files.push(...correctedModule.files);
+        } else {
+          // skip
+        }
+      }
     }
   }
 

@@ -50,6 +50,36 @@ export const getReadme = async (repoId: number): Promise<string> => {
     return {...dirToFileTree(repo!.local_path), name: repo!.name};
  }
 
+ export const filterFileTree = (
+    fileTree: FileTree,
+    filter: (file: string) => boolean,
+    basePath: string = ''
+): FileTree | null => {
+    const currentPath = path.join(basePath, fileTree.name);
+
+    // If it's a file (no children), apply the filter directly
+    if (fileTree.children.length === 0) {
+        return filter(currentPath) ? fileTree : null;
+    }
+
+    // For directories, filter children recursively
+    const filteredChildren = fileTree.children
+        .map(child => filterFileTree(child, filter, currentPath))
+        .filter((child): child is FileTree => child !== null);
+
+    // Keep the directory if it has any children left after filtering
+    // or if it passes the filter itself
+    if (filteredChildren.length > 0 || filter(currentPath)) {
+        return {
+            name: fileTree.name,
+            children: filteredChildren
+        };
+    }
+
+    // If no children are left and the directory doesn't pass the filter, remove it
+    return null;
+};
+
  export const renderFileTree = (fileTree: FileTree): string => {
     const renderTree = (tree: FileTree, indent: string): string => {
         return `${indent}${tree.name}\n` + tree.children.map((child:FileTree) => renderTree(child, indent + '  ')).join('\n');
@@ -70,3 +100,48 @@ export const getReadme = async (repoId: number): Promise<string> => {
         ...fileTree.children.flatMap(child => getAllFiles(child, filter, curPath))
     ];
  }
+
+
+
+/***********************
+ ************* Filters
+ ***********************/
+
+ export const isSubstantiveJsOrTsFile = (file: string): boolean => {
+    const forbiddenFiles = [
+        'vite.config.ts',
+        'tailwind.config.ts',
+        'postcss.config.ts',
+        'postcss.config.js',
+        'eslintrc.js',
+        'eslintrc.d.ts',
+        'eslintrc.d.tsx',
+        'eslint.config.js',
+        'eslint.config.ts',
+    ];
+
+    if (forbiddenFiles.includes(file)) {
+        return false;
+    }
+
+    const forbiddenDirectories = [
+        'node_modules',
+        'dist',
+        'build',
+        'public',
+        'scripts',
+        'tests',
+        'test',
+        'docs',
+    ];
+
+    for (const dir of forbiddenDirectories) {
+        if (file.includes(dir)) {
+            return false;
+        }
+    }
+
+    return file.endsWith('.ts') || file.endsWith('.tsx') || file.endsWith('.js') || file.endsWith('.jsx');
+ }
+ 
+ 

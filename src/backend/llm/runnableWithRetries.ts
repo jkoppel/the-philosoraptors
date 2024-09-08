@@ -73,7 +73,7 @@ export const createValidatedRunnable = <T extends InputValues, Z>({
       );
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const response = await runnable.invoke(invocationParams, options?.config);
+      let response = await runnable.invoke(invocationParams, options?.config);
       let validationResult = await zodParser.safeParseAsync(response);
       if (validationResult.success) {
         return validationResult.data;
@@ -83,19 +83,28 @@ export const createValidatedRunnable = <T extends InputValues, Z>({
       // Retry logic
       // ##############################
       let attempt = 1;
-      let lastResponse = response;
       let lastError = validationResult.error;
 
       while (attempt <= maxAttempts) {
+        console.log(`Response is ${JSON.stringify(response)}`);
         console.error(
           `Failed to generate a valid response: retry attempt ${attempt} of ${maxAttempts}`,
-          { zodError: lastError, response: lastResponse },
+          { zodError: lastError, response },
         );
         const runnable = ChatPromptTemplate.fromTemplate(reviseTemplate).pipe(
           llm.withStructuredOutput(jsonSchema),
         );
 
-        const response = await runnable.invoke(
+        const lastResponse = response;
+
+        console.log(`Rerunning with 
+          ${JSON.stringify({
+            originalPrompt: await originalPrompt.format(invocationParams),
+            completion: JSON.stringify(lastResponse),
+            error: formatZodErrorForLlm(lastResponse, lastError),
+          })}`);
+
+        response = await runnable.invoke(
           {
             originalPrompt: await originalPrompt.format(invocationParams),
             completion: JSON.stringify(lastResponse),
@@ -109,7 +118,6 @@ export const createValidatedRunnable = <T extends InputValues, Z>({
         if (validationResult.success) {
           return validationResult.data; // If validation succeeds, return the response
         } else {
-          lastResponse = response; // Store last response for the next iteration
           lastError = validationResult.error; // Update lastError with the latest error details
           attempt++;
         }
