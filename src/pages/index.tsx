@@ -1,32 +1,35 @@
-import Image from "next/image"
-import localFont from "next/font/local"
-import BlurIn from "@/components/magicui/blur-in"
-import { useState, useEffect } from "react"
-import { FileDependencyMap } from "@/backend/types"
-import { motion, AnimatePresence } from "framer-motion"
-import ShimmerButton from "@/components/magicui/shimmer-button"
-import { CodeBlock } from "@/components/code-block"
+import Image from "next/image";
+import localFont from "next/font/local";
+import BlurIn from "@/components/magicui/blur-in";
+import { useState, useEffect } from "react";
+import { FileDependencyMap } from "@/backend/types";
+import { motion, AnimatePresence } from "framer-motion";
+import ShimmerButton from "@/components/magicui/shimmer-button";
+import { CodeBlock } from "@/components/code-block";
+import Graph from "@/components/graph";
+import { sampleModuleGraph } from "@/lib/samples";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
   weight: "100 900",
-})
+});
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
   weight: "100 900",
-})
+});
 
 export default function Home() {
-  const [repoId, setRepoId] = useState<number | null>(1)
-  const demoFilePath = "packages/pglite/src/worker/index.ts"
-  const [demoFileContent, setDemoFileContent] = useState<string | null>(null)
-  const [graph, setGraph] = useState<FileDependencyMap | null>(null)
-  const [repoUrl, setRepoUrl] = useState("")
-  const [knowledgeLevel, setKnowledgeLevel] = useState(0)
-  const [activeRepo, setActiveRepo] = useState("")
-  const [showContent, setShowContent] = useState(false)
+  const [repoId, setRepoId] = useState<number | null>(1);
+  const demoFilePath = "packages/pglite/src/worker/index.ts";
+  const [demoFileContent, setDemoFileContent] = useState<string | null>(null);
+  const [graph, setGraph] = useState<FileDependencyMap | null>(null);
+  const [repoUrl, setRepoUrl] = useState("");
+  const [knowledgeLevel, setKnowledgeLevel] = useState(0);
+  const [activeRepo, setActiveRepo] = useState("");
+  const [showContent, setShowContent] = useState(false);
+  const [fileContent, setFileContent] = useState<string | null>(null);
 
   const repoOptions = [
     { name: "pglite", url: "https://github.com/electric-sql/pglite" },
@@ -34,7 +37,7 @@ export default function Home() {
     { name: "NumPy", url: "https://github.com/numpy/numpy" },
     { name: "React", url: "https://github.com/facebook/react" },
     { name: "Supabase", url: "https://github.com/supabase/supabase" },
-  ]
+  ];
 
   const handleCloneRepo = async (repoUrl: string) => {
     try {
@@ -46,56 +49,56 @@ export default function Home() {
         body: JSON.stringify({
           repoUrl: `${repoUrl}.git`,
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to clone repository")
+        throw new Error("Failed to clone repository");
       }
 
-      const data = await response.json()
-      setRepoId(data.id)
+      const data = await response.json();
+      setRepoId(data.id);
     } catch (error) {
-      console.error("Error cloning repository:", error)
+      console.error("Error cloning repository:", error);
     }
-  }
+  };
 
   const fetchFileContent = async () => {
     try {
       const response = await fetch(
         `/api/repos/${repoId}/files/${demoFilePath}`
-      )
+      );
       if (!response.ok) {
-        throw new Error("Failed to fetch file content")
+        throw new Error("Failed to fetch file content");
       }
-      const data = await response.json()
-      setDemoFileContent(data.content)
+      const data = await response.json();
+      setDemoFileContent(data.content);
     } catch (error) {
-      console.error("Error fetching file content:", error)
-      setDemoFileContent("Error: Failed to fetch file content")
+      console.error("Error fetching file content:", error);
+      setDemoFileContent("Error: Failed to fetch file content");
     }
-  }
+  };
 
   const fetchGraph = async (id: number) => {
     try {
-      const response = await fetch(`/api/repos/${id}`)
+      const response = await fetch(`/api/repos/${id}`);
       if (!response.ok) {
-        throw new Error("Failed to fetch graph")
+        throw new Error("Failed to fetch graph");
       }
-      const data = await response.json()
-      setGraph(data.files)
+      const data = await response.json();
+      setGraph(data.files);
     } catch (error) {
-      console.error("Error fetching graph:", error)
+      console.error("Error fetching graph:", error);
     }
-  }
+  };
   useEffect(() => {
-    fetchFileContent()
-  }, [])
+    fetchFileContent();
+  }, []);
 
   useEffect(() => {
     if (repoId) {
-      fetchGraph(repoId)
+      fetchGraph(repoId);
     }
-  }, [repoId])
+  }, [repoId]);
 
   const mockData = [
     { text: "Main repository structure", importance: "high" },
@@ -108,29 +111,29 @@ export default function Home() {
     { text: "Documentation in docs/", importance: "medium" },
     { text: "Build scripts in scripts/", importance: "low" },
     { text: "Third-party integrations in integrations/", importance: "medium" },
-  ]
+  ];
 
   const getStyleForImportance = (importance: string) => {
     switch (importance) {
       case "high":
-        return "text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500"
+        return "text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500";
       case "medium":
-        return "text-xl font-semibold bg-gradient-to-r from-blue-500 to-teal-500"
+        return "text-xl font-semibold bg-gradient-to-r from-blue-500 to-teal-500";
       case "low":
-        return "text-lg font-medium bg-gradient-to-r from-green-500 to-yellow-500"
+        return "text-lg font-medium bg-gradient-to-r from-green-500 to-yellow-500";
       default:
-        return ""
+        return "";
     }
-  }
+  };
 
   const handleRepoButtonClick = (url: string, name: string) => {
-    setRepoUrl(url)
-    setActiveRepo(name)
-  }
+    setRepoUrl(url);
+    setActiveRepo(name);
+  };
 
   const handleLearnNowClick = () => {
-    setShowContent(true)
-  }
+    setShowContent(true);
+  };
 
   return (
     <div
@@ -296,12 +299,22 @@ export default function Home() {
         </AnimatePresence>
       </div>
       <div className="flex flex-col items-center justify-center max-w-4xl mx-auto">
-        <CodeBlock
-          className="w-full"
-          fileName={demoFilePath}
-          value={demoFileContent || "Loading..."}
-        />
+        <details>
+          <summary>Code Block</summary>
+          <CodeBlock
+            className="w-full"
+            fileName={demoFilePath}
+            value={demoFileContent || "Loading..."}
+          />
+        </details>
       </div>
+
+      {graph && (
+        <div>
+          <h2>Reflexion Graph:</h2>
+          <Graph graph={sampleModuleGraph} />
+        </div>
+      )}
     </div>
-  )
+  );
 }
