@@ -10,8 +10,8 @@ export default function handler(
   res: NextApiResponse<ReflexionModel>
 ) {
   return match(req)
-    .with({ method: "POST", body: { repoId: P.number } }, async (postReq) => {
-      const repoId = postReq.body.repoId;
+    .with({ method: "POST", query: { repoId: P.string } }, async (postReq) => {
+      const repoId = parseInt(postReq.query.repoId);
       try {
         // get module names
         const reflexionModel = await createReflexionModelFromRepo(repoId);
