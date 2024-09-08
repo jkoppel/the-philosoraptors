@@ -24,3 +24,8 @@ export type ReflexionModel = {
   moduleGraph: ModuleGraph;
   modulesDefinition: ModulesDefinition;
 };
+
+// New type for edge data
+export type EdgeData = {
+  correct?: boolean;
+};

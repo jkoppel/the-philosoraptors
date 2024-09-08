@@ -16,6 +16,7 @@ export default function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
+  console.log("req.query", req.query);
   return match(req)
     .with({ method: "GET", query: { repoId: P.string } }, async (getReq) => {
       const repoId = parseInt(getReq.query.repoId);

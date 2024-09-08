@@ -16,20 +16,22 @@ import Sidebar from "./sidebar";
 import { DnDProvider, useDnD } from "./context";
 import { ModuleGraph } from "@/backend/types";
 import { convertModuleGraphToReactFlow } from "@/lib/utils";
+import { correctnessInfo } from "@/lib/samples";
+import CustomEdge from "./CustomEdge";
 
 let id = 0;
 const getId = () => `dndnode_${id++}`;
 
-const DnDFlow = ({
-  initialNodes,
-  initialEdges,
-}: {
-  initialNodes: Node[];
-  initialEdges: Edge[];
-}) => {
+const edgeTypes = {
+  "custom-edge": CustomEdge,
+};
+
+const DnDFlow = ({ graph }: { graph: ModuleGraph }) => {
+  const { nodes: correctNodes, edges: correctEdges } =
+    convertModuleGraphToReactFlow(graph, correctnessInfo);
   const reactFlowWrapper = useRef(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [nodes, setNodes, onNodesChange] = useNodesState(correctNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(correctEdges);
   const { screenToFlowPosition } = useReactFlow();
   const [type] = useDnD();
 
@@ -73,12 +75,19 @@ const DnDFlow = ({
 
   return (
     <div className="dndflow" style={{ width: "50vw", height: "50vh" }}>
+      <Sidebar
+        moduleNames={Object.values(correctNodes).map(
+          (node) => node.data.label as string
+        )}
+      />
+
       <div className="reactflow-wrapper" ref={reactFlowWrapper}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
+          edgeTypes={edgeTypes}
           onConnect={onConnect}
           onDrop={onDrop}
           onDragOver={onDragOver}
@@ -87,17 +96,15 @@ const DnDFlow = ({
           <Controls />
         </ReactFlow>
       </div>
-      <Sidebar />
     </div>
   );
 };
 
 export default ({ graph }: { graph: ModuleGraph }) => {
-  const { nodes, edges } = convertModuleGraphToReactFlow(graph);
   return (
     <ReactFlowProvider>
       <DnDProvider>
-        <DnDFlow initialNodes={nodes} initialEdges={edges} />
+        <DnDFlow graph={graph} />
       </DnDProvider>
     </ReactFlowProvider>
   );
