@@ -328,7 +328,7 @@ export default function Home() {
         </AnimatePresence>
       </div>
 
-      {reflexionModel && (
+      {reflexionModel && showContent && (
         <div>
           <h2>Reflexion Graph:</h2>
           <Graph graph={reflexionModel.modulesDefinition.moduleMapping} />
