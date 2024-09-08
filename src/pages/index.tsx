@@ -8,8 +8,6 @@ import ShimmerButton from "@/components/magicui/shimmer-button"
 import Graph from "@/components/graph"
 import { sampleModuleGraph } from "@/lib/samples"
 import { FileVersionSlider } from "@/components/file-version-slider"
-import { CodeBlock } from "@/components/code-block";
-import { Data } from "./api/repos/[repoId]/explanation";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -23,17 +21,16 @@ const geistMono = localFont({
 })
 
 export default function Home() {
-  const [repoId, setRepoId] = useState<number | null>(1);
-  const demoFilePath = "packages/pglite/src/worker/index.ts";
-  const [demoFileContent, setDemoFileContent] = useState<string | null>(null);
-  const [graph, setGraph] = useState<FileDependencyMap | null>(null);
-  const [repoUrl, setRepoUrl] = useState("");
-  const [knowledgeLevel, setKnowledgeLevel] = useState(0);
-  const [activeRepo, setActiveRepo] = useState("");
-  const [showContent, setShowContent] = useState(false);
-  const [fileContent, setFileContent] = useState<string | null>(null);
-  const [explanation, setExplanation] = useState<string[] | null>(null);
-  const [codeLevels, setCodeLevels] = useState<string[] | null>(null);
+  const [repoId, setRepoId] = useState<number | null>(1)
+  const demoFilePath = "packages/pglite/src/worker/index.ts"
+  const [demoFileContent, setDemoFileContent] = useState<string | null>(null)
+  const [graph, setGraph] = useState<FileDependencyMap | null>(null)
+  const [repoUrl, setRepoUrl] = useState("")
+  const [knowledgeLevel, setKnowledgeLevel] = useState(0)
+  const [activeRepo, setActiveRepo] = useState("")
+  const [showContent, setShowContent] = useState(false)
+  const [explanation, setExplanation] = useState<string[] | null>(null)
+  const [codeLevels, setCodeLevels] = useState<string[] | null>(null)
 
   const repoOptions = [
     { name: "pglite", url: "https://github.com/electric-sql/pglite" },
@@ -122,8 +119,8 @@ export default function Home() {
 
   useEffect(() => {
     if (repoId) {
-      fetchGraph(repoId);
-      fetchExplanation(repoId);
+      fetchGraph(repoId)
+      fetchExplanation(repoId)
     }
   }, [repoId])
 
@@ -164,18 +161,16 @@ export default function Home() {
 
   const fetchExplanation = async (id: number) => {
     try {
-      const response = await fetch(`/api/repos/${id}/explanation`);
+      const response = await fetch(`/api/repos/${id}/explanation`)
       if (!response.ok) {
-        throw new Error("Failed to fetch explanation");
+        throw new Error("Failed to fetch explanation")
       }
-      const data = await response.json();
-      setExplanation(data.explanation);
-      
+      const data = await response.json()
+      setExplanation(data.explanation)
     } catch (error) {
-      console.error("Error fetching graph:", error);
+      console.error("Error fetching graph:", error)
     }
-  };
-
+  }
 
   return (
     <div
@@ -276,33 +271,35 @@ export default function Home() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5 }}
             >
-              
               <div className="">
-                {(explanation ?? []).filter(item => item!="").map((item, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    className={`p-4 rounded-lg text-xl bg-white z-10 my-8 p-2`}>
-                    <p className="text-black">{item}</p>
-                  </motion.div>
-                ))}
+                {(explanation ?? [])
+                  .filter((item) => item != "")
+                  .map((item, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: index * 0.1 }}
+                      className={`p-4 rounded-lg text-xl bg-white z-10 my-8 p-2`}
+                    >
+                      <p className="text-black">{item}</p>
+                    </motion.div>
+                  ))}
+              </div>
+              <div className="flex flex-col items-center justify-center max-w-4xl mx-auto">
+                <details>
+                  <summary className="text-xl font-bold text-green-900 mb-4">
+                    {demoFilePath}
+                  </summary>
+                  <FileVersionSlider
+                    filePath={demoFilePath}
+                    versions={codeLevels || []}
+                  />
+                </details>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-      <div className="flex flex-col items-center justify-center max-w-4xl mx-auto">
-        <details>
-          <summary className="text-xl font-bold text-green-800 mb-4">
-            {demoFilePath}
-          </summary>
-          <FileVersionSlider
-            filePath={demoFilePath}
-            versions={codeLevels || []}
-          />
-        </details>
       </div>
 
       {graph && (
