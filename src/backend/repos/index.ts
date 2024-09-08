@@ -4,8 +4,8 @@ import path from 'path';
 import os from 'os';
 import { Project } from 'ts-morph';
 
-import { FileDependencyMap } from './types';
-import { insertFileDependencyGraph, insertRepo } from './db/queries';
+import { FileDependencyMap } from '../types';
+import { insertFileDependencyGraph, insertRepo } from '../db/queries';
 
 /**********************************************************************************/
 
@@ -43,9 +43,6 @@ async function saveFileDependencyMapToDB(repoId: number, directoryPath: string):
   try {
     // Get the file dependencies
     const fileDependencyMap = getFileDependencies(directoryPath);
-
-    // Convert the FileDependencyMap to JSON
-    const dependencyMapJson = JSON.stringify(fileDependencyMap);
 
     // Insert or update the dependency map in the database
     await insertFileDependencyGraph(repoId, fileDependencyMap);
@@ -102,4 +99,3 @@ export async function cloneAndSaveRepo(repoUrl: string, repoName: string): Promi
     throw error;
   }
 }
-
