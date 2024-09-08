@@ -1,7 +1,7 @@
 import Image from "next/image"
 import localFont from "next/font/local"
 import BlurIn from "@/components/magicui/blur-in"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -16,6 +16,7 @@ const geistMono = localFont({
 
 export default function Home() {
   const [repoId, setRepoId] = useState<number | null>(null)
+  const [fileContent, setFileContent] = useState<string | null>(null)
 
   const handleCloneRepo = async () => {
     try {
@@ -40,6 +41,24 @@ export default function Home() {
     }
   }
 
+  const fetchFileContent = async () => {
+    try {
+      const response = await fetch(`/api/repos/1/files/src/components/app.tsx`)
+      if (!response.ok) {
+        throw new Error("Failed to fetch file content")
+      }
+      const data = await response.json()
+      setFileContent(data.content)
+    } catch (error) {
+      console.error("Error fetching file content:", error)
+      setFileContent("Error: Failed to fetch file content")
+    }
+  }
+
+  useEffect(() => {
+    fetchFileContent()
+  }, [])
+
   return (
     <div
       className={`${geistSans.variable} ${geistMono.variable} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]`}
@@ -55,6 +74,11 @@ export default function Home() {
           Clone Repository
         </button>
         {repoId && <p>Repository cloned successfully! ID: {repoId}</p>}
+
+        <h2>Content of src/components/app.tsx:</h2>
+        <pre className="bg-gray-100 p-4 rounded overflow-auto max-w-full">
+          {fileContent || "Loading..."}
+        </pre>
 
         <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
           <li className="mb-2">
