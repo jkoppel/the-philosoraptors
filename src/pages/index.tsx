@@ -2,6 +2,7 @@ import Image from "next/image"
 import localFont from "next/font/local"
 import BlurIn from "@/components/magicui/blur-in"
 import { useState, useEffect } from "react"
+import { FileDependencyMap } from "@/backend/types"
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -15,8 +16,9 @@ const geistMono = localFont({
 })
 
 export default function Home() {
-  const [repoId, setRepoId] = useState<number | null>(null)
+  const [repoId, setRepoId] = useState<number | null>(1)
   const [fileContent, setFileContent] = useState<string | null>(null)
+  const [graph, setGraph] = useState<FileDependencyMap | null>(null)
 
   const handleCloneRepo = async () => {
     try {
@@ -43,7 +45,9 @@ export default function Home() {
 
   const fetchFileContent = async () => {
     try {
-      const response = await fetch(`/api/repos/1/files/src/components/app.tsx`)
+      const response = await fetch(
+        `/api/repos/${repoId}/files/src/components/app.tsx`
+      )
       if (!response.ok) {
         throw new Error("Failed to fetch file content")
       }
@@ -55,9 +59,27 @@ export default function Home() {
     }
   }
 
+  const fetchGraph = async (id: number) => {
+    try {
+      const response = await fetch(`/api/repos/${id}`)
+      if (!response.ok) {
+        throw new Error("Failed to fetch graph")
+      }
+      const data = await response.json()
+      setGraph(data.files)
+    } catch (error) {
+      console.error("Error fetching graph:", error)
+    }
+  }
   useEffect(() => {
     fetchFileContent()
   }, [])
+
+  useEffect(() => {
+    if (repoId) {
+      fetchGraph(repoId)
+    }
+  }, [repoId])
 
   return (
     <div
@@ -74,6 +96,15 @@ export default function Home() {
           Clone Repository
         </button>
         {repoId && <p>Repository cloned successfully! ID: {repoId}</p>}
+
+        {graph && (
+          <div>
+            <h2>File Dependency Graph:</h2>
+            <pre className="bg-gray-100 p-4 rounded overflow-auto max-w-full">
+              {JSON.stringify(graph, null, 2)}
+            </pre>
+          </div>
+        )}
 
         <h2>Content of src/components/app.tsx:</h2>
         <pre className="bg-gray-100 p-4 rounded overflow-auto max-w-full">
