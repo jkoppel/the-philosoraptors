@@ -36,7 +36,7 @@ export default function Home() {
     { name: "Supabase", url: "https://github.com/supabase/supabase" },
   ]
 
-  const handleCloneRepo = async () => {
+  const handleCloneRepo = async (repoUrl: string) => {
     try {
       const response = await fetch("/api/repos", {
         method: "POST",
@@ -44,7 +44,7 @@ export default function Home() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          repoUrl: "https://github.com/functorism/minichat.git",
+          repoUrl: `${repoUrl}.git`,
         }),
       })
 
@@ -62,7 +62,7 @@ export default function Home() {
   const fetchFileContent = async () => {
     try {
       const response = await fetch(
-        `/api/repos/${repoId}/files/src/components/app.tsx`
+        `/api/repos/${repoId}/files/${demoFilePath}`
       )
       if (!response.ok) {
         throw new Error("Failed to fetch file content")
