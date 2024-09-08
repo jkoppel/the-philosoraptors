@@ -3,7 +3,7 @@ import {globSync} from 'glob';
 
 
 import { db } from './db/conn';
-import { ReflexionModel, FileDependencyMap, ModuleGraph, ModuleName, ModulesDefinition } from './types';
+import { ReflexionModel, FileDependencyMap, ModuleGraph, ModuleName, ModulesDefinition, FilePathStr } from './types';
 import { getFileDependencyGraph, getRepoById, getRepoByName } from './db/queries';
 import { z } from 'zod';
 import { filterFileTree, getAllFiles, getFileTree, getReadme, isSubstantiveJsOrTsFile, renderFileTree } from './repos/fileStructure';
@@ -15,26 +15,43 @@ import { easyRunLlm, easyRunLlmValidated } from './llm/execution';
  **************************************************/
 
 
-function createModuleGraph(fileDependencyMap: FileDependencyMap, modulesDefinition: ModulesDefinition): ModuleGraph {
+function createModuleGraph(fileDependencyMap: FileDependencyMap, modulesDefinition: ModulesDefinition, repoName: string): ModuleGraph {
+  console.log('Creating module graph...');
   const moduleGraph: ModuleGraph = {};
   const fileToModuleMap: { [filePath: string]: ModuleName } = {};
 
   // Create a reverse mapping of file paths to module names
+  console.log('Creating reverse mapping of file paths to module names...');
   for (const [moduleName, filePaths] of Object.entries(modulesDefinition.moduleMapping)) {
     for (const filePath of filePaths) {
       fileToModuleMap[filePath] = moduleName;
     }
   }
+  console.log('Reverse mapping created:', fileToModuleMap);
 
   // Iterate through the file dependency map
-  for (const [filePath, dependencies] of Object.entries(fileDependencyMap.dependencies)) {
+  console.log('Iterating through file dependency map...');
+  for (const [unstrippedFilePath, dependencies] of Object.entries(fileDependencyMap.dependencies)) {
+    const filePath = stripLeadingRepoName(repoName, unstrippedFilePath);
+    console.log('Processing file:', filePath);
     const sourceModule = fileToModuleMap[filePath];
-    if (!sourceModule) continue; // Skip if the file is not in any module
+    if (!sourceModule) {
+      console.log('Skipping file not in any module:', filePath);
+      continue; // Skip if the file is not in any module
+    }
 
     for (const dependency of dependencies) {
-      const resolvedPath = path.resolve(path.dirname(filePath), dependency);
-      const targetModule = fileToModuleMap[resolvedPath];
+      console.log('Observing dependency:', dependency);
+      let targetModule = fileToModuleMap[dependency];
+      console.log('Target module:', targetModule);
+
+      if (targetModule == undefined) {
+        targetModule = fileToModuleMap[dependency.replace(".js", ".ts")];
+      }
+      console.log('Target module:', targetModule);
+
       if (targetModule && targetModule !== sourceModule) {
+        console.log('Adding edge:', sourceModule, '->', targetModule);
         if (!moduleGraph[sourceModule]) {
           moduleGraph[sourceModule] = [];
         }
@@ -45,6 +62,7 @@ function createModuleGraph(fileDependencyMap: FileDependencyMap, modulesDefiniti
     }
   }
 
+  console.log('Module graph created:', moduleGraph);
   return moduleGraph;
 }
 
@@ -91,7 +109,8 @@ export async function compareReflexionModelWithActual(reflexionModel: ReflexionM
   // Create the actual module graph from the file dependencies
   const actualModuleGraph: ModuleGraph = createModuleGraph(
     fileDependencyMap,
-    reflexionModel.modulesDefinition
+    reflexionModel.modulesDefinition,
+    repoName
   );
 
   // Compare the actual module graph with the one from the reflexion model
@@ -244,7 +263,7 @@ const parseModuleOutput = (repoName: string, rawOutput: string): ModuleNamesResu
   return result;
 }
 
- export async function generateModuleNames(repoId: number): Promise<ModuleNamesResult> {
+ async function generateModuleNames(repoId: number): Promise<ModuleNamesResult> {
   const repoData = await getRepoById(repoId);
   const fileTree = filterFileTree(await getFileTree(repoData!.id), isSubstantiveJsOrTsFile)!;
   const readme = await getReadme(repoData!.id);
@@ -258,7 +277,7 @@ const parseModuleOutput = (repoName: string, rawOutput: string): ModuleNamesResu
 
   let output = parseModuleOutput(repoData!.name, rawOutput);
 
-  const retryCount = 3;
+  const retryCount = 4;
   let unseenFiles: Set<string> = new Set();
   for (let i = 0; i < retryCount; i++) {
     unincludedFiles: {
@@ -347,4 +366,26 @@ const parseModuleOutput = (repoName: string, rawOutput: string): ModuleNamesResu
   }
 
   return output;
+}
+
+export const createReflexionModelFromRepo = async (repoId: number): Promise<ReflexionModel> => {
+  console.log("All files", getAllFiles(await getFileTree(repoId), isSubstantiveJsOrTsFile));
+
+  const repoData = await getRepoById(repoId);
+  const moduleNames = await generateModuleNames(repoId);
+  
+  const modulesDefinition: ModulesDefinition = {
+    moduleMapping: moduleNames.reduce((acc, module) => {
+      acc[module.name] = module.files;
+      return acc;
+    }, {} as { [moduleName: ModuleName]: FilePathStr[] })
+  };
+
+  // Get the file dependency map
+  const fileDependencyMap = await getFileDependencyGraph(repoId);
+
+  // Create the module graph
+  const moduleGraph = createModuleGraph(fileDependencyMap, modulesDefinition, repoData!.name);
+
+  return { moduleGraph, modulesDefinition };
 }

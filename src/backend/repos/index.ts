@@ -27,7 +27,7 @@ function getFileDependencies(directoryPath: string): FileDependencyMap {
       const moduleSpecifier = importDeclaration.getModuleSpecifierValue();
       if (moduleSpecifier && !dependencies[filePath].includes(moduleSpecifier)) {
         const pathRelativeToFile = importDeclaration.getModuleSpecifierValue();
-        const resolvedPath = path.resolve(path.join(sourceFilePath, pathRelativeToFile));
+        const resolvedPath = path.resolve(path.join(path.dirname(sourceFilePath), pathRelativeToFile));
 
         const relativePath = path.relative(directoryPath, resolvedPath);
         console.log(relativePath);

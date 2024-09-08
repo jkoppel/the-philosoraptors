@@ -120,7 +120,8 @@ export const getReadme = async (repoId: number): Promise<string> => {
         'eslint.config.ts',
     ];
 
-    if (forbiddenFiles.includes(file)) {
+    if (forbiddenFiles.includes(path.basename(file))) {
+        console.log('Skipping forbidden file:', file);
         return false;
     }
 
@@ -137,10 +138,11 @@ export const getReadme = async (repoId: number): Promise<string> => {
 
     for (const dir of forbiddenDirectories) {
         if (file.includes(dir)) {
+            console.log('Skipping forbidden directory:', file);
             return false;
         }
     }
-
+    console.log('File ' + file + ' passes extension test?' + (file.endsWith('.ts') || file.endsWith('.tsx') || file.endsWith('.js') || file.endsWith('.jsx')));
     return file.endsWith('.ts') || file.endsWith('.tsx') || file.endsWith('.js') || file.endsWith('.jsx');
  }
  
