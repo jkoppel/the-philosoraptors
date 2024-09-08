@@ -21,7 +21,7 @@ const geistMono = localFont({
 })
 
 export default function Home() {
-  const [repoId, setRepoId] = useState<number | null>(4)
+  const [repoId, setRepoId] = useState<number | null>(1)
   const demoFilePath = "packages/pglite/src/worker/index.ts"
   const [demoFileContent, setDemoFileContent] = useState<string | null>(null)
   const [codeLevels, setCodeLevels] = useState<string[] | null>(null)
