@@ -136,9 +136,7 @@ export default function Home() {
   };
 
   return (
-    <div
-      className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-gradient-to-b from-gray-100 to-gray-200 py-8 px-4 sm:px-8 font-[family-name:var(--font-geist-sans)]`}
-    >
+    <div className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-gradient-to-b from-green-50 to-green-900 py-8 px-4 sm:px-8 font-[family-name:var(--font-geist-sans)]`}>
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col sm:flex-row items-end justify-center mb-12">
           <div className="mb-6 sm:mb-0 sm:mr-8">
