@@ -1,6 +1,6 @@
 import simpleGit from 'simple-git';
 import { mkdtemp } from 'fs/promises';
-import { join } from 'path';
+import path from 'path';
 import os from 'os';
 import { Project } from 'ts-morph';
 
@@ -19,13 +19,19 @@ function getFileDependencies(directoryPath: string): FileDependencyMap {
 
   const dependencies: { [filename: string]: string[] } = {};
   project.getSourceFiles().forEach(sourceFile => {
-    const filePath = sourceFile.getFilePath();
+    const sourceFilePath = sourceFile.getFilePath();
+    const filePath = path.relative(directoryPath, sourceFilePath);
     dependencies[filePath] = [];
 
     sourceFile.getImportDeclarations().forEach(importDeclaration => {
       const moduleSpecifier = importDeclaration.getModuleSpecifierValue();
       if (moduleSpecifier && !dependencies[filePath].includes(moduleSpecifier)) {
-        dependencies[filePath].push(moduleSpecifier);
+        const pathRelativeToFile = importDeclaration.getModuleSpecifierValue();
+        const resolvedPath = path.resolve(path.join(sourceFilePath, pathRelativeToFile));
+
+        const relativePath = path.relative(directoryPath, resolvedPath);
+        console.log(relativePath);
+        dependencies[filePath].push(relativePath);
       }
     });
   });
@@ -60,7 +66,7 @@ async function saveFileDependencyMapToDB(repoId: number, directoryPath: string):
  export async function cloneRepoToTempDir(repoUrl: string): Promise<string> {
   try {
     // Create a temporary directory
-    const tempDir = await mkdtemp(join(os.tmpdir(), 'repo-'));
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'repo-'));
 
     // Initialize simple-git
     const git = simpleGit();
