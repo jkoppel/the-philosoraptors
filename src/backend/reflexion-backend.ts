@@ -93,3 +93,8 @@ export async function compareReflexionModelWithActual(reflexionModel: ReflexionM
   // Compare the actual module graph with the one from the reflexion model
   return compareModuleGraphs(reflexionModel.moduleGraph, actualModuleGraph);
 }
+
+
+/**************************************************
+ ******* AI-generated "ground-truth" diagram ******
+ **************************************************/
