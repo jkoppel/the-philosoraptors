@@ -56,6 +56,9 @@ importers:
       ts-morph:
         specifier: ^19.0.0
         version: 19.0.0
+      ts-pattern:
+        specifier: ^5.3.1
+        version: 5.3.1
       vite:
         specifier: ^5.0.10
         version: 5.4.3(@types/node@20.16.5)
@@ -2357,6 +2360,9 @@ packages:
 
   ts-morph@19.0.0:
     resolution: {integrity: sha512-D6qcpiJdn46tUqV45vr5UGM2dnIEuTGNxVhg0sk5NX11orcouwj6i1bMqZIz2mZTZB1Hcgy7C3oEVhAT+f6mbQ==}
+
+  ts-pattern@5.3.1:
+    resolution: {integrity: sha512-1RUMKa8jYQdNfmnK4jyzBK3/PS/tnjcZ1CW0v1vWDeYe5RBklc/nquw03MEoB66hVBm4BnlCfmOqDVxHyT1DpA==}
 
   tsconfig-paths@3.15.0:
     resolution: {integrity: sha512-2Ac2RgzDe/cn48GvOe3M+o82pEFewD3UPbyoUHHdKasHwJKjds4fLXWf/Ux5kATBKN20oaFGu+jbElp1pos0mg==}
@@ -5040,6 +5046,8 @@ snapshots:
     dependencies:
       '@ts-morph/common': 0.20.0
       code-block-writer: 12.0.0
+
+  ts-pattern@5.3.1: {}
 
   tsconfig-paths@3.15.0:
     dependencies:
