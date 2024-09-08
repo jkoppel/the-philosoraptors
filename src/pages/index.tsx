@@ -8,6 +8,8 @@ import ShimmerButton from "@/components/magicui/shimmer-button"
 import Graph from "@/components/graph"
 import { sampleModuleGraph } from "@/lib/samples"
 import { FileVersionSlider } from "@/components/file-version-slider"
+import { CodeBlock } from "@/components/code-block";
+import { Data } from "./api/repos/[repoId]/explanation";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -21,15 +23,17 @@ const geistMono = localFont({
 })
 
 export default function Home() {
-  const [repoId, setRepoId] = useState<number | null>(1)
-  const demoFilePath = "packages/pglite/src/worker/index.ts"
-  const [demoFileContent, setDemoFileContent] = useState<string | null>(null)
-  const [codeLevels, setCodeLevels] = useState<string[] | null>(null)
-  const [graph, setGraph] = useState<FileDependencyMap | null>(null)
-  const [repoUrl, setRepoUrl] = useState("")
-  const [knowledgeLevel, setKnowledgeLevel] = useState(0)
-  const [activeRepo, setActiveRepo] = useState("")
-  const [showContent, setShowContent] = useState(false)
+  const [repoId, setRepoId] = useState<number | null>(1);
+  const demoFilePath = "packages/pglite/src/worker/index.ts";
+  const [demoFileContent, setDemoFileContent] = useState<string | null>(null);
+  const [graph, setGraph] = useState<FileDependencyMap | null>(null);
+  const [repoUrl, setRepoUrl] = useState("");
+  const [knowledgeLevel, setKnowledgeLevel] = useState(0);
+  const [activeRepo, setActiveRepo] = useState("");
+  const [showContent, setShowContent] = useState(false);
+  const [fileContent, setFileContent] = useState<string | null>(null);
+  const [explanation, setExplanation] = useState<string[] | null>(null);
+  const [codeLevels, setCodeLevels] = useState<string[] | null>(null);
 
   const repoOptions = [
     { name: "pglite", url: "https://github.com/electric-sql/pglite" },
@@ -118,7 +122,8 @@ export default function Home() {
 
   useEffect(() => {
     if (repoId) {
-      fetchGraph(repoId)
+      fetchGraph(repoId);
+      fetchExplanation(repoId);
     }
   }, [repoId])
 
@@ -157,13 +162,28 @@ export default function Home() {
     setShowContent(true)
   }
 
+  const fetchExplanation = async (id: number) => {
+    try {
+      const response = await fetch(`/api/repos/${id}/explanation`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch explanation");
+      }
+      const data = await response.json();
+      setExplanation(data.explanation);
+      
+    } catch (error) {
+      console.error("Error fetching graph:", error);
+    }
+  };
+
+
   return (
     <div
       className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-gradient-to-b from-green-50 to-green-900 py-8 px-4 sm:px-8 font-[family-name:var(--font-geist-sans)]`}
     >
       <div className="max-w-4xl mx-auto">
-        <div className="flex flex-col sm:flex-row items-end justify-center mb-12">
-          <div className="mb-6 sm:mb-0 sm:mr-8">
+        <div className="flex flex-col sm:flex-row items-end justify-center mb-6">
+          <div className="mb-2 sm:mb-0 sm:mr-8">
             <Image
               src="/dino.png"
               alt="Rex the Dino"
@@ -173,7 +193,7 @@ export default function Home() {
             />
           </div>
           <BlurIn
-            word="Learn any Github repo with Rex!"
+            word="Learn any Github repo with Rexy!"
             className="text-3xl sm:text-4xl font-bold text-green-800 dark:text-green-200 text-center sm:text-left"
           />
         </div>
@@ -248,6 +268,7 @@ export default function Home() {
         </div>
 
         <AnimatePresence>
+          {/* render generated paragraphs here */}
           {showContent && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -255,64 +276,16 @@ export default function Home() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <div className="mb-12 text-center space-y-6">
-                <h2 className="text-2xl font-bold text-green-800 mb-4">
-                  Unlock the Power of Code Analysis
-                </h2>
-                <p className="text-md text-gray-700">
-                  Discover the inner workings of any GitHub repository with our
-                  advanced analysis tool. Whether you're a seasoned developer or
-                  just starting out, our platform provides valuable insights
-                  into code structure, dependencies, and best practices.
-                </p>
-                <h3 className="text-xl font-semibold text-green-700 mt-6">
-                  How It Works
-                </h3>
-                <ol className="list-decimal list-inside text-left text-gray-700 space-y-2">
-                  <li>Enter a GitHub URL in the input field above</li>
-                  <li>Click the "Learn Now" button to start the analysis</li>
-                  <li>
-                    Explore the breakdown of the repository's architecture
-                  </li>
-                  <li>
-                    Gain insights into key components and project organization
-                  </li>
-                </ol>
-                <h3 className="text-xl font-semibold text-green-700 mt-6">
-                  Key Features
-                </h3>
-                <ul className="list-disc list-inside text-left text-gray-700 space-y-2">
-                  <li>
-                    **AI-Powered Analysis**: Leverage cutting-edge machine
-                    learning algorithms
-                  </li>
-                  <li>
-                    **Comprehensive Breakdown**: Get a detailed view of the
-                    project structure
-                  </li>
-                  <li>
-                    **Best Practices Highlight**: Learn from well-structured
-                    repositories
-                  </li>
-                  <li>
-                    **Dependency Mapping**: Understand the relationships between
-                    different parts of the code
-                  </li>
-                </ul>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {mockData.map((item, index) => (
+              
+              <div className="">
+                {(explanation ?? []).filter(item => item!="").map((item, index) => (
                   <motion.div
                     key={index}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: index * 0.1 }}
-                    className={`p-4 rounded-lg shadow-md ${getStyleForImportance(
-                      item.importance
-                    )}`}
-                  >
-                    <p className="text-white text-sm">{item.text}</p>
+                    className={`p-4 rounded-lg text-xl bg-white z-10 my-8 p-2`}>
+                    <p className="text-black">{item}</p>
                   </motion.div>
                 ))}
               </div>
