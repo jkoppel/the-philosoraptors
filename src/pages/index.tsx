@@ -1,36 +1,39 @@
-import Image from "next/image"
-import localFont from "next/font/local"
-import BlurIn from "@/components/magicui/blur-in"
-import { useState, useEffect } from "react"
-import { FileDependencyMap } from "@/backend/types"
-import { motion, AnimatePresence } from "framer-motion"
-import ShimmerButton from "@/components/magicui/shimmer-button"
-import Graph from "@/components/graph"
-import { sampleModuleGraph } from "@/lib/samples"
-import { FileVersionSlider } from "@/components/file-version-slider"
+import Image from "next/image";
+import localFont from "next/font/local";
+import BlurIn from "@/components/magicui/blur-in";
+import { useState, useEffect } from "react";
+import { FileDependencyMap, ReflexionModel } from "@/backend/types";
+import { motion, AnimatePresence } from "framer-motion";
+import ShimmerButton from "@/components/magicui/shimmer-button";
+import Graph from "@/components/graph";
+import { sampleModuleGraph } from "@/lib/samples";
+import { FileVersionSlider } from "@/components/file-version-slider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
   weight: "100 900",
-})
+});
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
   weight: "100 900",
-})
+});
 
 export default function Home() {
-  const [repoId, setRepoId] = useState<number | null>(1)
-  const demoFilePath = "packages/pglite/src/worker/index.ts"
-  const [demoFileContent, setDemoFileContent] = useState<string | null>(null)
-  const [graph, setGraph] = useState<FileDependencyMap | null>(null)
-  const [repoUrl, setRepoUrl] = useState("")
-  const [knowledgeLevel, setKnowledgeLevel] = useState(0)
-  const [activeRepo, setActiveRepo] = useState("")
-  const [showContent, setShowContent] = useState(false)
-  const [explanation, setExplanation] = useState<string[] | null>(null)
-  const [codeLevels, setCodeLevels] = useState<string[] | null>(null)
+  const [repoId, setRepoId] = useState<number | null>(1);
+  const demoFilePath = "packages/pglite/src/worker/index.ts";
+  const [demoFileContent, setDemoFileContent] = useState<string | null>(null);
+  const [graph, setGraph] = useState<FileDependencyMap | null>(null);
+  const [repoUrl, setRepoUrl] = useState("");
+  const [knowledgeLevel, setKnowledgeLevel] = useState(0);
+  const [activeRepo, setActiveRepo] = useState("");
+  const [showContent, setShowContent] = useState(false);
+  const [explanation, setExplanation] = useState<string[] | null>(null);
+  const [codeLevels, setCodeLevels] = useState<string[] | null>(null);
+  const [reflexionModel, setReflexionModel] = useState<ReflexionModel | null>(
+    null
+  );
 
   const repoOptions = [
     { name: "pglite", url: "https://github.com/electric-sql/pglite" },
@@ -38,7 +41,7 @@ export default function Home() {
     { name: "NumPy", url: "https://github.com/numpy/numpy" },
     { name: "React", url: "https://github.com/facebook/react" },
     { name: "Supabase", url: "https://github.com/supabase/supabase" },
-  ]
+  ];
 
   const handleCloneRepo = async (repoUrl: string) => {
     try {
@@ -50,18 +53,18 @@ export default function Home() {
         body: JSON.stringify({
           repoUrl: `${repoUrl}.git`,
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to clone repository")
+        throw new Error("Failed to clone repository");
       }
 
-      const data = await response.json()
-      setRepoId(data.id)
+      const data = await response.json();
+      setRepoId(data.id);
     } catch (error) {
-      console.error("Error cloning repository:", error)
+      console.error("Error cloning repository:", error);
     }
-  }
+  };
 
   const fetchCodeLevels = async (content: string) => {
     try {
@@ -71,58 +74,61 @@ export default function Home() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ sourceCode: content }),
-      })
-      console.log("response", response)
+      });
+      console.log("response", response);
       if (!response.ok) {
-        throw new Error("Failed to fetch code levels")
+        throw new Error("Failed to fetch code levels");
       }
-      const data = await response.json()
-      return data.codeLevels
+      const data = await response.json();
+      return data.codeLevels;
     } catch (error) {
-      console.error("Error fetching code levels:", error)
-      return []
+      console.error("Error fetching code levels:", error);
+      return [];
     }
-  }
+  };
 
   const fetchFileContent = async () => {
     try {
-      const response = await fetch(`/api/repos/${repoId}/files/${demoFilePath}`)
+      const response = await fetch(
+        `/api/repos/${repoId}/files/${demoFilePath}`
+      );
       if (!response.ok) {
-        throw new Error("Failed to fetch file content")
+        throw new Error("Failed to fetch file content");
       }
-      const data = await response.json()
-      setDemoFileContent(data.content)
+      const data = await response.json();
+      setDemoFileContent(data.content);
 
-      const codeLevels = await fetchCodeLevels(data.content)
-      setCodeLevels(codeLevels)
+      const codeLevels = await fetchCodeLevels(data.content);
+      setCodeLevels(codeLevels);
     } catch (error) {
-      console.error("Error fetching file content:", error)
-      setDemoFileContent("Error: Failed to fetch file content")
+      console.error("Error fetching file content:", error);
+      setDemoFileContent("Error: Failed to fetch file content");
     }
-  }
+  };
 
   const fetchGraph = async (id: number) => {
     try {
-      const response = await fetch(`/api/repos/${id}`)
+      const response = await fetch(`/api/repos/${id}`);
       if (!response.ok) {
-        throw new Error("Failed to fetch graph")
+        throw new Error("Failed to fetch graph");
       }
-      const data = await response.json()
-      setGraph(data.files)
+      const data = await response.json();
+      setGraph(data.files);
     } catch (error) {
-      console.error("Error fetching graph:", error)
+      console.error("Error fetching graph:", error);
     }
-  }
+  };
   useEffect(() => {
-    fetchFileContent()
-  }, [])
+    fetchFileContent();
+  }, []);
 
   useEffect(() => {
     if (repoId) {
-      fetchGraph(repoId)
-      fetchExplanation(repoId)
+      fetchGraph(repoId);
+      fetchExplanation(repoId);
+      fetchReflextionModel(repoId);
     }
-  }, [repoId])
+  }, [repoId]);
 
   const mockData = [
     { text: "Main repository structure", importance: "high" },
@@ -135,42 +141,62 @@ export default function Home() {
     { text: "Documentation in docs/", importance: "medium" },
     { text: "Build scripts in scripts/", importance: "low" },
     { text: "Third-party integrations in integrations/", importance: "medium" },
-  ]
+  ];
 
   const getStyleForImportance = (importance: string) => {
     switch (importance) {
       case "high":
-        return "text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500"
+        return "text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500";
       case "medium":
-        return "text-xl font-semibold bg-gradient-to-r from-blue-500 to-teal-500"
+        return "text-xl font-semibold bg-gradient-to-r from-blue-500 to-teal-500";
       case "low":
-        return "text-lg font-medium bg-gradient-to-r from-green-500 to-yellow-500"
+        return "text-lg font-medium bg-gradient-to-r from-green-500 to-yellow-500";
       default:
-        return ""
+        return "";
     }
-  }
+  };
 
   const handleRepoButtonClick = (url: string, name: string) => {
-    setRepoUrl(url)
-    setActiveRepo(name)
-  }
+    setRepoUrl(url);
+    setActiveRepo(name);
+  };
 
   const handleLearnNowClick = () => {
-    setShowContent(true)
-  }
+    setShowContent(true);
+  };
 
   const fetchExplanation = async (id: number) => {
     try {
-      const response = await fetch(`/api/repos/${id}/explanation`)
+      const response = await fetch(`/api/repos/${id}/explanation`);
       if (!response.ok) {
-        throw new Error("Failed to fetch explanation")
+        throw new Error("Failed to fetch explanation");
       }
-      const data = await response.json()
-      setExplanation(data.explanation)
+      const data = await response.json();
+      setExplanation(data.explanation);
     } catch (error) {
-      console.error("Error fetching graph:", error)
+      console.error("Error fetching graph:", error);
     }
-  }
+  };
+
+  const fetchReflextionModel = async (id: number) => {
+    try {
+      const response = await fetch(`/api/tmp-test`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ repoId: id }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch explanation");
+      }
+      const data = await response.json();
+      console.log("data", data);
+      setReflexionModel(data);
+    } catch (error) {
+      console.error("Error fetching graph:", error);
+    }
+  };
 
   return (
     <div
@@ -302,12 +328,12 @@ export default function Home() {
         </AnimatePresence>
       </div>
 
-      {graph && (
+      {reflexionModel && (
         <div>
           <h2>Reflexion Graph:</h2>
-          <Graph graph={sampleModuleGraph} />
+          <Graph graph={reflexionModel.modulesDefinition.moduleMapping} />
         </div>
       )}
     </div>
-  )
+  );
 }
